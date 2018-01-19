@@ -19,6 +19,13 @@ Step 2. Add the dependency
 	        compile 'com.github.luweibin3118:AndroidTetris:v1.0.0'
 	}
 	
+Step 3. Add TetrisView in your layout xml
+
+
+    <com.lwb.tetrislib.TetrisView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
 
 ![image](https://github.com/luweibin3118/AndroidTetris/blob/master/app/20180120002730.jpg)
 
