@@ -311,7 +311,7 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
         mPaint.setColor(0xff545941);
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setTextAlign(Paint.Align.CENTER);
-        mCanvas.drawText("作者:卢伟斌  QQ:2200213300",getWidth() / 2, getHeight() - 5,mPaint) ;
+        mCanvas.drawText("作者:卢伟斌  QQ:2200213300", getWidth() / 2, getHeight() - 5, mPaint);
     }
 
     private void drawNextTetris() {
@@ -430,8 +430,8 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
     private void checkScore() {
         for (int i = T_HEIGHT_PIX - 1; i >= 0; i--) {
             boolean success = true;
-            for (int j = T_WIDTH_PIX - 1; j > 0; j--) {
-                success = success & saveDrawArray[i][j];
+            for (int j = 0; j < T_WIDTH_PIX; j++) {
+                success = success && saveDrawArray[i][j];
             }
             if (success) {
                 score += baseScore + stepScore;
