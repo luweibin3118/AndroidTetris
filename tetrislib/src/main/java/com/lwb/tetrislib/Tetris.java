@@ -22,6 +22,20 @@ public class Tetris {
         createTetris(getDisplayPix());
     }
 
+    public Tetris(int w, int h, List<String> display) {
+        this.w = w;
+        this.h = h;
+        tetrisPixs = new TetrisPix[4][4];
+        int m = 0;
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                String[] item = display.get(m).split(",");
+                m++;
+                tetrisPixs[i][j] = new TetrisPix(Integer.parseInt(item[0]), Integer.parseInt(item[1]), Boolean.parseBoolean(item[2]));
+            }
+        }
+    }
+
     private void createTetris(boolean[][] displayPix) {
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {

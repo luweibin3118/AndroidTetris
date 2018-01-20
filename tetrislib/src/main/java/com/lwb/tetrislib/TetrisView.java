@@ -2,17 +2,22 @@ package com.lwb.tetrislib;
 
 import android.app.Service;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Vibrator;
+import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -60,7 +65,7 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
 
     private Rect gameOverRect;
 
-    private int gameBackgroundColor = 0xFF9DACA5, backgroundColor = 0xff8B6508;
+    private int gameBackgroundColor = 0xFF9DACA5, backgroundColor = 0xff8B6508;//0xff8B6508
 
     private int offBackgoundColor = 0xff889790, onBackgoundColor = 0xff000604;
 
@@ -110,6 +115,34 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
         pixRectArray = new Rect[T_HEIGHT_PIX][T_WIDTH_PIX];
         nextRectArray = new Rect[4][4];
 
+        SharedPreferences sp = getContext().getSharedPreferences("tetris", Context.MODE_PRIVATE);
+        if (!sp.getBoolean("isGameOver", true)) {
+            String saveBackgroundPix = sp.getString("backgroundPix", "");
+            List<String> backgroundPixList = Arrays.asList(saveBackgroundPix.split(" "));
+            for (int i = 0; i < T_HEIGHT_PIX; i++) {
+                for (int j = 0; j < T_WIDTH_PIX; j++) {
+                    if (backgroundPixList.contains(i + "," + j)) {
+                        saveDrawArray[i][j] = true;
+                    }
+                }
+            }
+            score = sp.getInt("score", 0);
+            stepTime = currentStepTime = sp.getInt("stepTime", DEFAULT_STEP_TIME);
+
+            String currentTetris = sp.getString("currentTetris", "");
+            if (!TextUtils.isEmpty(currentTetris)) {
+                List<String> currentTetrisList = Arrays.asList(currentTetris.split(" "));
+                tetris = new Tetris(T_WIDTH_PIX, T_HEIGHT_PIX, currentTetrisList);
+            }
+            String saveNextTetris = sp.getString("saveNextTetris", "");
+            if (!TextUtils.isEmpty(saveNextTetris)) {
+                List<String> saveNextTetrisList = Arrays.asList(saveNextTetris.split(" "));
+                nextTetris = new Tetris(T_WIDTH_PIX, T_HEIGHT_PIX, saveNextTetrisList);
+            }
+
+            pause = true;
+        }
+
         mGestureDetector = new GestureDetector(getContext(), this);
         mVibrator = (Vibrator) getContext().getSystemService(Service.VIBRATOR_SERVICE);
     }
@@ -129,7 +162,47 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         isDrawing = false;
+        SharedPreferences sp = getContext().getSharedPreferences("tetris", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean("isGameOver", isGameOver);
+        if (!isGameOver) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < T_HEIGHT_PIX; i++) {
+                for (int j = 0; j < T_WIDTH_PIX; j++) {
+                    if (saveDrawArray[i][j]) {
+                        sb.append(i + "," + j + " ");
+                    }
+                }
+            }
+            editor.putString("backgroundPix", sb.toString());
+            editor.putInt("score", score);
+            editor.putInt("stepTime", stepTime);
+
+            sb = new StringBuilder();
+            TetrisPix[][] currentTetris = tetris.getTetrisPixs();
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                    sb.append(currentTetris[i][j].row + "," + currentTetris[i][j].col + "," + currentTetris[i][j].display + " ");
+                }
+            }
+            editor.putString("currentTetris", sb.toString());
+
+
+            sb = new StringBuilder();
+            TetrisPix[][] saveNextTetris = nextTetris.getTetrisPixs();
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                    sb.append(saveNextTetris[i][j].row + "," + saveNextTetris[i][j].col + "," + saveNextTetris[i][j].display + " ");
+                }
+            }
+            editor.putString("saveNextTetris", sb.toString());
+
+
+        }
+        editor.commit();
     }
+
+    private boolean pause = false;
 
     @Override
     public void run() {
@@ -177,7 +250,7 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
 
         mPaint.setTextSize((gameOverRect.bottom - gameOverRect.top) / 5);
         mPaint.setColor(0xFF3A5FCD);
-        mCanvas.drawText("Replay", gameOverRect.left + (gameOverRect.right - gameOverRect.left) / 2,
+        mCanvas.drawText("Click to replay", gameOverRect.left + (gameOverRect.right - gameOverRect.left) / 2,
                 gameOverRect.top + (gameOverRect.bottom - gameOverRect.top) * 4 / 5, mPaint);
     }
 
@@ -200,6 +273,7 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
             tetris = createTetris();
         }
         if (nextTetris == null) {
+            Log.i("TTT", "saveNextTetris null");
             nextTetris = createTetris();
         }
         if (!tetris.moveDown(saveDrawArray)) {
@@ -451,11 +525,32 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
     }
 
     private void updateStepTime() {
-        stepTime = DEFAULT_STEP_TIME - (DEFAULT_STEP_TIME / 10) * (score / 100);
-        baseScore = 10 + 5 * (score / 100);
-        if (stepTime < DEFAULT_STEP_TIME / 10) {
-            stepTime = DEFAULT_STEP_TIME / 10;
+        if (score < 100) {
+            stepTime = 1000;
+        } else if (score >= 100 && score < 300) {
+            stepTime = 900;
+        } else if (score >= 300 && score < 600) {
+            stepTime = 800;
+        } else if (score >= 600 && score < 1000) {
+            stepTime = 700;
+        } else if (score >= 1000 && score < 1500) {
+            stepTime = 600;
+        } else if (score >= 1500 && score < 2100) {
+            stepTime = 500;
+        } else if (score >= 2100 && score < 2700) {
+            stepTime = 400;
+        } else if (score >= 2700 && score < 3500) {
+            stepTime = 300;
+        } else if (score >= 3500 && score < 5000) {
+            stepTime = 250;
+        } else if (score >= 5000 && score < 7000) {
+            stepTime = 200;
+        } else if (score >= 7000 && score < 10000) {
+            stepTime = 150;
+        } else {
+            stepTime = 100;
         }
+        baseScore = 10 + 5 * ((1000 - stepTime) / 100);
     }
 
     public void resetPaint() {
@@ -567,6 +662,7 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
         score = 0;
         baseScore = 10;
         nextTetris = null;
+        pause = false;
         currentStepTime = stepTime = DEFAULT_STEP_TIME;
         saveDrawArray = new boolean[T_HEIGHT_PIX][T_WIDTH_PIX];
         new Thread(this).start();
