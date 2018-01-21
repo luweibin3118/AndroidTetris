@@ -1,5 +1,5 @@
 # AndroidTetris
-Android实现俄罗斯方块（Tetris）游戏
+Android实现俄罗斯方块（Tetris）游戏，退出游戏时可自动保存当前状态
 
 To get a Git project into your build:
 
