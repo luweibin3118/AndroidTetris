@@ -98,6 +98,9 @@ public class Tetris {
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 if (temp[i][j].display) {
+                    if (temp[i][j].row >= h) {
+                        return;
+                    }
                     if (temp[i][j].col < 0 || temp[i][j].col >= w) {
                         if (!leftOrRight(currentSave, temp, 1) && !leftOrRight(currentSave, temp, turnIn ? -1 : -2)) {
                             return;

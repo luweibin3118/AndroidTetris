@@ -10,7 +10,6 @@ import android.graphics.Rect;
 import android.os.Vibrator;
 import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -79,9 +78,26 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
 
     private Random mRandom = new Random();
 
-    private int score = 0, stepScore = 0, baseScore = 10;
+    private int score = 0, stepScore = 0, baseScore = 10, highestScore;
 
     private Vibrator mVibrator;
+
+    private SharedPreferences sp;
+
+    private interface TetrisConstants {
+        String TETRIS = "tetris";
+        String IS_GAME_OVER = "isGameOver";
+        String BACKGROUND_PIX = "backgroundPix";
+        String SCORE = "score";
+        String STEP_TIME = "stepTime";
+        String CURRENT_TETRIS = "currentTetris";
+        String SAVENEXT_TETRIS = "saveNextTetris";
+        String GAME = "GAME";
+        String OVER = "OVER";
+        String CLICK_TO_REPLAY = "Click to replay";
+        String AUTHOR = "Author:luweibin  QQ:2200213300";
+        String HIGHEST_SCORE = "highestScore";
+    }
 
     public TetrisView(Context context) {
         super(context);
@@ -115,9 +131,10 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
         pixRectArray = new Rect[T_HEIGHT_PIX][T_WIDTH_PIX];
         nextRectArray = new Rect[4][4];
 
-        SharedPreferences sp = getContext().getSharedPreferences("tetris", Context.MODE_PRIVATE);
-        if (!sp.getBoolean("isGameOver", true)) {
-            String saveBackgroundPix = sp.getString("backgroundPix", "");
+        sp = getContext().getSharedPreferences(TetrisConstants.TETRIS, Context.MODE_PRIVATE);
+        highestScore = sp.getInt(TetrisConstants.HIGHEST_SCORE, 0);
+        if (!sp.getBoolean(TetrisConstants.IS_GAME_OVER, true)) {
+            String saveBackgroundPix = sp.getString(TetrisConstants.BACKGROUND_PIX, "");
             List<String> backgroundPixList = Arrays.asList(saveBackgroundPix.split(" "));
             for (int i = 0; i < T_HEIGHT_PIX; i++) {
                 for (int j = 0; j < T_WIDTH_PIX; j++) {
@@ -126,15 +143,15 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
                     }
                 }
             }
-            score = sp.getInt("score", 0);
-            stepTime = currentStepTime = sp.getInt("stepTime", DEFAULT_STEP_TIME);
+            score = sp.getInt(TetrisConstants.SCORE, 0);
+            stepTime = currentStepTime = sp.getInt(TetrisConstants.STEP_TIME, DEFAULT_STEP_TIME);
 
-            String currentTetris = sp.getString("currentTetris", "");
+            String currentTetris = sp.getString(TetrisConstants.CURRENT_TETRIS, "");
             if (!TextUtils.isEmpty(currentTetris)) {
                 List<String> currentTetrisList = Arrays.asList(currentTetris.split(" "));
                 tetris = new Tetris(T_WIDTH_PIX, T_HEIGHT_PIX, currentTetrisList);
             }
-            String saveNextTetris = sp.getString("saveNextTetris", "");
+            String saveNextTetris = sp.getString(TetrisConstants.SAVENEXT_TETRIS, "");
             if (!TextUtils.isEmpty(saveNextTetris)) {
                 List<String> saveNextTetrisList = Arrays.asList(saveNextTetris.split(" "));
                 nextTetris = new Tetris(T_WIDTH_PIX, T_HEIGHT_PIX, saveNextTetrisList);
@@ -162,9 +179,8 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         isDrawing = false;
-        SharedPreferences sp = getContext().getSharedPreferences("tetris", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
-        editor.putBoolean("isGameOver", isGameOver);
+        editor.putBoolean(TetrisConstants.IS_GAME_OVER, isGameOver);
         if (!isGameOver) {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < T_HEIGHT_PIX; i++) {
@@ -174,9 +190,9 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
                     }
                 }
             }
-            editor.putString("backgroundPix", sb.toString());
-            editor.putInt("score", score);
-            editor.putInt("stepTime", stepTime);
+            editor.putString(TetrisConstants.BACKGROUND_PIX, sb.toString());
+            editor.putInt(TetrisConstants.SCORE, score);
+            editor.putInt(TetrisConstants.STEP_TIME, stepTime);
 
             sb = new StringBuilder();
             TetrisPix[][] currentTetris = tetris.getTetrisPixs();
@@ -185,7 +201,7 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
                     sb.append(currentTetris[i][j].row + "," + currentTetris[i][j].col + "," + currentTetris[i][j].display + " ");
                 }
             }
-            editor.putString("currentTetris", sb.toString());
+            editor.putString(TetrisConstants.CURRENT_TETRIS, sb.toString());
 
 
             sb = new StringBuilder();
@@ -195,7 +211,7 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
                     sb.append(saveNextTetris[i][j].row + "," + saveNextTetris[i][j].col + "," + saveNextTetris[i][j].display + " ");
                 }
             }
-            editor.putString("saveNextTetris", sb.toString());
+            editor.putString(TetrisConstants.SAVENEXT_TETRIS, sb.toString());
 
 
         }
@@ -243,14 +259,14 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
         mPaint.setColor(0xffffffff);
         mPaint.setTextSize((gameOverRect.bottom - gameOverRect.top) / 4);
         mPaint.setTextAlign(Paint.Align.CENTER);
-        mCanvas.drawText("GAME", gameOverRect.left + (gameOverRect.right - gameOverRect.left) / 2,
+        mCanvas.drawText(TetrisConstants.GAME, gameOverRect.left + (gameOverRect.right - gameOverRect.left) / 2,
                 gameOverRect.top + (gameOverRect.bottom - gameOverRect.top) * 1 / 4, mPaint);
-        mCanvas.drawText("OVER", gameOverRect.left + (gameOverRect.right - gameOverRect.left) / 2,
+        mCanvas.drawText(TetrisConstants.OVER, gameOverRect.left + (gameOverRect.right - gameOverRect.left) / 2,
                 gameOverRect.top + (gameOverRect.bottom - gameOverRect.top) * 2 / 4, mPaint);
 
         mPaint.setTextSize((gameOverRect.bottom - gameOverRect.top) / 5);
         mPaint.setColor(0xFF3A5FCD);
-        mCanvas.drawText("Click to replay", gameOverRect.left + (gameOverRect.right - gameOverRect.left) / 2,
+        mCanvas.drawText(TetrisConstants.CLICK_TO_REPLAY, gameOverRect.left + (gameOverRect.right - gameOverRect.left) / 2,
                 gameOverRect.top + (gameOverRect.bottom - gameOverRect.top) * 4 / 5, mPaint);
     }
 
@@ -273,7 +289,6 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
             tetris = createTetris();
         }
         if (nextTetris == null) {
-            Log.i("TTT", "saveNextTetris null");
             nextTetris = createTetris();
         }
         if (!tetris.moveDown(saveDrawArray)) {
@@ -381,11 +396,11 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
 
     private void drawMark() {
         resetPaint();
-        mPaint.setTextSize(30);
+        mPaint.setTextSize(gameHeight / 50);
         mPaint.setColor(0xff545941);
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setTextAlign(Paint.Align.CENTER);
-        mCanvas.drawText("作者:卢伟斌  QQ:2200213300", getWidth() / 2, getHeight() - 5, mPaint);
+        mCanvas.drawText(TetrisConstants.AUTHOR, getWidth() / 2, getHeight() - 5, mPaint);
     }
 
     private void drawNextTetris() {
@@ -415,7 +430,10 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
         mCanvas.drawText("score", scoreRect.centerX(), scoreRect.centerY() - scoreRect.height() / 8, mPaint);
         mPaint.setTextSize(scoreRect.width() / 4);
         mPaint.setColor(scoreColor);
-        mCanvas.drawText(String.valueOf(score), scoreRect.centerX(), scoreRect.centerY() + scoreRect.height() / 4, mPaint);
+        mCanvas.drawText(String.valueOf(score), scoreRect.centerX(), scoreRect.centerY() + scoreRect.height() / 5, mPaint);
+        mPaint.setTextSize(scoreRect.width() / 6);
+        mPaint.setColor(0xaaffd700);
+        mCanvas.drawText("1st: " + highestScore, scoreRect.centerX(), scoreRect.centerY() + scoreRect.height() * 4 / 9, mPaint);
     }
 
     private void drawButton() {
@@ -509,6 +527,12 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
             }
             if (success) {
                 score += baseScore + stepScore;
+                if (score > highestScore) {
+                    highestScore = score;
+                    SharedPreferences.Editor editor = sp.edit();
+                    editor.putInt(TetrisConstants.HIGHEST_SCORE, highestScore);
+                    editor.commit();
+                }
                 stepScore = baseScore;
                 updateStepTime();
                 for (int r = i - 1; r >= -1; r--) {
@@ -623,10 +647,7 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
 
     @Override
     public void onLongPress(MotionEvent e) {
-        if (longPressRect == btnLeftRect) {
-            onLeft();
-        }
-        postDelayed(new Runnable() {
+        post(new Runnable() {
             @Override
             public void run() {
                 if (longPressRect == btnLeftRect) {
@@ -638,17 +659,14 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
                 if (longPressRect == btnTopRect) {
                     onTop();
                 }
-                if (longPressRect == btnBottomRect) {
-                    onBottom();
-                }
                 if (longPressRect == btnTurnRect) {
                     onTurn();
                 }
                 if (longPressRect != null) {
-                    postDelayed(this, 200);
+                    postDelayed(this, 100);
                 }
             }
-        }, 200);
+        });
     }
 
     @Override
@@ -699,4 +717,3 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
         mVibrator.vibrate(new long[]{0, 50}, -1);
     }
 }
-
