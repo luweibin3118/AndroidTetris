@@ -16,7 +16,7 @@ Add it in your root build.gradle at the end of repositories:
 Step 2. Add the dependency
 
 	dependencies {
-	        compile 'com.github.luweibin3118:AndroidTetris:v1.0.2'
+	        compile 'com.github.luweibin3118:AndroidTetris:v1.0.3'
 	}
 	
 Step 3. Add TetrisView in your layout xml
