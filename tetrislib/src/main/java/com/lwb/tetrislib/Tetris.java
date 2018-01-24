@@ -314,6 +314,11 @@ public class Tetris {
                 displayPix[3][1] = true;
                 break;
             default:
+                for (int i = 0; i < 4; i++) {
+                    for (int j = 0; j < 4; j++) {
+                        displayPix[i][j] = true;
+                    }
+                }
                 break;
         }
         return displayPix;
