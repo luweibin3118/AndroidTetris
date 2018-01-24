@@ -12,12 +12,12 @@ android {
     }
 
     signingConfigs {
-        release {
-            keyAlias 'tetris'
-            keyPassword '123456'
-            storeFile file('D:/tetris.jks')
-            storePassword '123456'
-        }
+//        release {
+//            keyAlias 'tetris'
+//            keyPassword '123456'
+//            storeFile file('D:/tetris.jks')
+//            storePassword '123456'
+//        }
     }
 
     buildTypes {
