@@ -340,7 +340,7 @@ public class TetrisView extends SurfaceView implements SurfaceHolder.Callback, R
         if (height > width) {
             int btnHeight = height - gameHeight;
             int btnCentX = width / 4;
-            int btnRadius = btnHeight / 9;
+            int btnRadius = width / 13;
             int btnCentY = gameHeight + btnHeight / 2;
             btnTopRect.set(btnCentX - btnRadius, btnCentY - btnRadius, btnCentX + btnRadius, btnCentY + btnRadius);
             btnTopRect.offset(0, -btnRadius * 2);
